@@ -9,10 +9,10 @@ afterAll(() => {
 });
 
 // Test helpers
-const createItem = async (name = 'Temp Item to Delete') => {
+const createTodo = async (name = 'Test Todo', due_date = null) => {
   const response = await request(app)
-    .post('/api/items')
-    .send({ name })
+    .post('/api/todos')
+    .send({ name, due_date })
     .set('Accept', 'application/json');
 
   expect(response.status).toBe(201);
@@ -21,82 +21,209 @@ const createItem = async (name = 'Temp Item to Delete') => {
 };
 
 describe('API Endpoints', () => {
-  describe('GET /api/items', () => {
-    it('should return all items', async () => {
-      const response = await request(app).get('/api/items');
+  describe('GET /', () => {
+    it('should return health check', async () => {
+      const response = await request(app).get('/');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('status', 'ok');
+    });
+  });
+
+  describe('GET /api/todos', () => {
+    it('should return all todos', async () => {
+      const response = await request(app).get('/api/todos');
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body.length).toBeGreaterThan(0);
 
-      // Check if items have the expected structure
-      const item = response.body[0];
-      expect(item).toHaveProperty('id');
-      expect(item).toHaveProperty('name');
-      expect(item).toHaveProperty('created_at');
+      const todo = response.body[0];
+      expect(todo).toHaveProperty('id');
+      expect(todo).toHaveProperty('name');
+      expect(todo).toHaveProperty('due_date');
+      expect(todo).toHaveProperty('completed');
+      expect(todo).toHaveProperty('created_at');
+    });
+
+    it('should filter todos by status=active', async () => {
+      const response = await request(app).get('/api/todos?status=active');
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+      response.body.forEach(todo => {
+        expect(todo.completed).toBe(0);
+      });
+    });
+
+    it('should filter todos by status=completed', async () => {
+      const todo = await createTodo('Completed Todo');
+      await request(app)
+        .put(`/api/todos/${todo.id}`)
+        .send({ completed: true });
+
+      const response = await request(app).get('/api/todos?status=completed');
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.some(t => t.id === todo.id)).toBe(true);
+      response.body.forEach(todo => {
+        expect(todo.completed).toBe(1);
+      });
     });
   });
 
-  describe('POST /api/items', () => {
-    it('should create a new item', async () => {
-      const newItem = { name: 'Test Item' };
+  describe('GET /api/todos/:id', () => {
+    it('should return a single todo', async () => {
+      const todo = await createTodo('Single Todo');
+      const response = await request(app).get(`/api/todos/${todo.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('id', todo.id);
+      expect(response.body).toHaveProperty('name', 'Single Todo');
+    });
+
+    it('should return 404 for non-existent todo', async () => {
+      const response = await request(app).get('/api/todos/999999');
+      expect(response.status).toBe(404);
+      expect(response.body).toHaveProperty('error', 'Todo not found');
+    });
+
+    it('should return 400 for invalid id', async () => {
+      const response = await request(app).get('/api/todos/abc');
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error', 'Valid todo ID is required');
+    });
+  });
+
+  describe('POST /api/todos', () => {
+    it('should create a new todo', async () => {
+      const newTodo = { name: 'New Test Todo' };
       const response = await request(app)
-        .post('/api/items')
-        .send(newItem)
+        .post('/api/todos')
+        .send(newTodo)
         .set('Accept', 'application/json');
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
-      expect(response.body.name).toBe(newItem.name);
+      expect(response.body.name).toBe(newTodo.name);
+      expect(response.body).toHaveProperty('due_date');
+      expect(response.body).toHaveProperty('completed', 0);
       expect(response.body).toHaveProperty('created_at');
+    });
+
+    it('should create a todo with a due date', async () => {
+      const newTodo = { name: 'Todo With Due Date', due_date: '2025-12-31' };
+      const response = await request(app)
+        .post('/api/todos')
+        .send(newTodo)
+        .set('Accept', 'application/json');
+
+      expect(response.status).toBe(201);
+      expect(response.body.due_date).toBe('2025-12-31');
     });
 
     it('should return 400 if name is missing', async () => {
       const response = await request(app)
-        .post('/api/items')
+        .post('/api/todos')
         .send({})
         .set('Accept', 'application/json');
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toBe('Item name is required');
+      expect(response.body).toHaveProperty('error', 'Todo name is required');
     });
 
     it('should return 400 if name is empty', async () => {
       const response = await request(app)
-        .post('/api/items')
+        .post('/api/todos')
         .send({ name: '' })
         .set('Accept', 'application/json');
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toBe('Item name is required');
+      expect(response.body).toHaveProperty('error', 'Todo name is required');
     });
   });
 
-  describe('DELETE /api/items/:id', () => {
-    it('should delete an existing item', async () => {
-      const item = await createItem('Item To Be Deleted');
+  describe('PUT /api/todos/:id', () => {
+    it('should update a todo name', async () => {
+      const todo = await createTodo('Original Name');
+      const response = await request(app)
+        .put(`/api/todos/${todo.id}`)
+        .send({ name: 'Updated Name' });
 
-      const deleteResponse = await request(app).delete(`/api/items/${item.id}`);
-      expect(deleteResponse.status).toBe(200);
-      expect(deleteResponse.body).toEqual({ message: 'Item deleted successfully', id: item.id });
-
-      const deleteAgain = await request(app).delete(`/api/items/${item.id}`);
-      expect(deleteAgain.status).toBe(404);
-      expect(deleteAgain.body).toHaveProperty('error', 'Item not found');
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('name', 'Updated Name');
     });
 
-    it('should return 404 when item does not exist', async () => {
-      const response = await request(app).delete('/api/items/999999');
+    it('should mark a todo as completed', async () => {
+      const todo = await createTodo('Todo to Complete');
+      const response = await request(app)
+        .put(`/api/todos/${todo.id}`)
+        .send({ completed: true });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('completed', 1);
+    });
+
+    it('should update the due date', async () => {
+      const todo = await createTodo('Todo for Due Date');
+      const response = await request(app)
+        .put(`/api/todos/${todo.id}`)
+        .send({ due_date: '2025-06-15' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('due_date', '2025-06-15');
+    });
+
+    it('should return 404 for non-existent todo', async () => {
+      const response = await request(app)
+        .put('/api/todos/999999')
+        .send({ name: 'Updated' });
+
       expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty('error', 'Item not found');
+      expect(response.body).toHaveProperty('error', 'Todo not found');
     });
 
     it('should return 400 for invalid id', async () => {
-      const response = await request(app).delete('/api/items/abc');
+      const response = await request(app)
+        .put('/api/todos/abc')
+        .send({ name: 'Updated' });
+
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error', 'Valid item ID is required');
+      expect(response.body).toHaveProperty('error', 'Valid todo ID is required');
+    });
+
+    it('should return 400 if updated name is empty', async () => {
+      const todo = await createTodo('Todo With Name');
+      const response = await request(app)
+        .put(`/api/todos/${todo.id}`)
+        .send({ name: '' });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error', 'Todo name cannot be empty');
+    });
+  });
+
+  describe('DELETE /api/todos/:id', () => {
+    it('should delete an existing todo', async () => {
+      const todo = await createTodo('Todo To Be Deleted');
+
+      const deleteResponse = await request(app).delete(`/api/todos/${todo.id}`);
+      expect(deleteResponse.status).toBe(200);
+      expect(deleteResponse.body).toEqual({ message: 'Todo deleted successfully', id: todo.id });
+
+      const deleteAgain = await request(app).delete(`/api/todos/${todo.id}`);
+      expect(deleteAgain.status).toBe(404);
+      expect(deleteAgain.body).toHaveProperty('error', 'Todo not found');
+    });
+
+    it('should return 404 when todo does not exist', async () => {
+      const response = await request(app).delete('/api/todos/999999');
+      expect(response.status).toBe(404);
+      expect(response.body).toHaveProperty('error', 'Todo not found');
+    });
+
+    it('should return 400 for invalid id', async () => {
+      const response = await request(app).delete('/api/todos/abc');
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error', 'Valid todo ID is required');
     });
   });
 });

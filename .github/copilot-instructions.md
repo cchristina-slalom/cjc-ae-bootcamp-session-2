@@ -9,3 +9,7 @@ This file contains high-level instructions for GitHub Copilot to follow when gen
 The project documentation will be built during the bootcamp sessions.
 
 - [Project Overview](../docs/project-overview.md) - Overview of the project
+- [Functional Requirements](../docs/functional-requirements.md) - Core functional requirements for the TODO app
+- [UI Guidelines](../docs/ui-guidelines.md) - UI component standards, color palette, accessibility, and styling rules
+- [Testing Guidelines](../docs/testing-guidelines.md) - Testing principles, frameworks, file conventions, and coverage requirements
+- [Coding Guidelines](../docs/coding-guidelines.md) - Coding style, formatting, naming conventions, and quality principles
