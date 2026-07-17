@@ -36,7 +36,7 @@ describe('TaskItem', () => {
 
   test('renders task name', () => {
     renderWithLocalization(
-      <TaskItem {...mockTask} {...mockCallbacks} loading={false} />
+      <TaskItem task={mockTask} {...mockCallbacks} loading={false} />
     );
 
     expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('TaskItem', () => {
     const taskWithDueDate = { ...mockTask, due_date: '2026-12-25' };
 
     renderWithLocalization(
-      <TaskItem {...taskWithDueDate} {...mockCallbacks} loading={false} />
+      <TaskItem task={taskWithDueDate} {...mockCallbacks} loading={false} />
     );
 
     expect(screen.getByText(/due:/i)).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe('TaskItem', () => {
   test('toggles completion when checkbox clicked', async () => {
     const user = userEvent.setup();
     renderWithLocalization(
-      <TaskItem {...mockTask} {...mockCallbacks} loading={false} />
+      <TaskItem task={mockTask} {...mockCallbacks} loading={false} />
     );
 
     const checkbox = screen.getByRole('checkbox');
@@ -70,7 +70,7 @@ describe('TaskItem', () => {
     const completedTask = { ...mockTask, completed: 1 };
 
     renderWithLocalization(
-      <TaskItem {...completedTask} {...mockCallbacks} loading={false} />
+      <TaskItem task={completedTask} {...mockCallbacks} loading={false} />
     );
 
     const taskName = screen.getByText('Test Task');
@@ -88,7 +88,7 @@ describe('TaskItem', () => {
     };
 
     renderWithLocalization(
-      <TaskItem {...overdueTask} {...mockCallbacks} loading={false} />
+      <TaskItem task={overdueTask} {...mockCallbacks} loading={false} />
     );
 
     expect(screen.getByLabelText(/overdue/i)).toBeInTheDocument();
@@ -97,7 +97,7 @@ describe('TaskItem', () => {
   test('enters edit mode when edit button clicked', async () => {
     const user = userEvent.setup();
     renderWithLocalization(
-      <TaskItem {...mockTask} {...mockCallbacks} loading={false} />
+      <TaskItem task={mockTask} {...mockCallbacks} loading={false} />
     );
 
     const editButton = screen.getByLabelText(/edit task/i);
@@ -111,7 +111,7 @@ describe('TaskItem', () => {
   test('deletes task when delete button clicked', async () => {
     const user = userEvent.setup();
     renderWithLocalization(
-      <TaskItem {...mockTask} {...mockCallbacks} loading={false} />
+      <TaskItem task={mockTask} {...mockCallbacks} loading={false} />
     );
 
     const deleteButton = screen.getByLabelText(/delete task/i);
@@ -124,7 +124,7 @@ describe('TaskItem', () => {
 
   test('disables buttons when loading', () => {
     renderWithLocalization(
-      <TaskItem {...mockTask} {...mockCallbacks} loading={true} />
+      <TaskItem task={mockTask} {...mockCallbacks} loading={true} />
     );
 
     expect(screen.getByRole('checkbox')).toBeDisabled();

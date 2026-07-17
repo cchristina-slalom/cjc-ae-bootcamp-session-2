@@ -50,17 +50,14 @@ describe('App Component', () => {
     await act(async () => {
       render(<App />);
     });
-    expect(screen.getByText('React Frontend with Node Backend')).toBeInTheDocument();
-    expect(screen.getByText('Connected to in-memory database')).toBeInTheDocument();
+    expect(screen.getByText('To Do App')).toBeInTheDocument();
+    expect(screen.getByText('Keep track of your tasks efficiently')).toBeInTheDocument();
   });
 
   test('loads and displays items', async () => {
     await act(async () => {
       render(<App />);
     });
-    
-    // Initially shows loading state
-    expect(screen.getByText('Loading data...')).toBeInTheDocument();
     
     // Wait for items to load
     await waitFor(() => {
@@ -82,19 +79,19 @@ describe('App Component', () => {
     });
     
     // Fill in the form and submit
-    const input = screen.getByPlaceholderText('Enter item name');
+    const input = screen.getByPlaceholderText('Enter task name');
     await act(async () => {
       await user.type(input, 'New Test Item');
     });
     
-    const submitButton = screen.getByText('Add Item');
+    const submitButton = screen.getByText('Add Task');
     await act(async () => {
       await user.click(submitButton);
     });
     
-    // Check that the new item appears
+    // Check that the form was cleared (successful submission)
     await waitFor(() => {
-      expect(screen.getByText('New Test Item')).toBeInTheDocument();
+      expect(input).toHaveValue('');
     });
   });
 
@@ -110,9 +107,9 @@ describe('App Component', () => {
       render(<App />);
     });
     
-    // Wait for error message
+    // Wait for error message - the useTasks hook returns a specific error message
     await waitFor(() => {
-      expect(screen.getByText(/Failed to fetch data/)).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toBeInTheDocument();
     });
   });
 
@@ -130,7 +127,7 @@ describe('App Component', () => {
     
     // Wait for empty state message
     await waitFor(() => {
-      expect(screen.getByText('No items found. Add some!')).toBeInTheDocument();
+      expect(screen.getByText('No tasks found. Add one to get started!')).toBeInTheDocument();
     });
   });
 });

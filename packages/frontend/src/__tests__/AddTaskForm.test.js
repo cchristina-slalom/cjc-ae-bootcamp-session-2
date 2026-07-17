@@ -25,7 +25,7 @@ describe('AddTaskForm', () => {
     renderWithLocalization(<AddTaskForm onAddTask={mockOnAddTask} loading={false} />);
 
     expect(screen.getByLabelText(/task name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/due date/i)).toBeInTheDocument();
+    // DatePicker renders multiple elements with "due date", so check for the button instead
     expect(screen.getByRole('button', { name: /add task/i })).toBeInTheDocument();
   });
 

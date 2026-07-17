@@ -1,5 +1,5 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useTasks } from '../useTasks';
+import { useTasks } from '../hooks/useTasks';
 
 describe('useTasks', () => {
   const mockTasks = [

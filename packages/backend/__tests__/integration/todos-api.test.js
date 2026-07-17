@@ -1,10 +1,12 @@
 const request = require('supertest');
-const { app, db } = require('../app');
+const { app, db } = require('../../src/app');
 
 describe('TODO API Integration Tests', () => {
   beforeEach(() => {
     // Clear the database before each test
     db.prepare('DELETE FROM items').run();
+    // Reset the AUTOINCREMENT sequence
+    db.prepare("DELETE FROM sqlite_sequence WHERE name='items'").run();
     
     // Insert test data
     const insertStmt = db.prepare('INSERT INTO items (name, due_date, completed) VALUES (?, ?, ?)');
