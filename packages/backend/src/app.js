@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const Database = require('better-sqlite3');
 
 // Initialize express app
@@ -10,6 +11,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Rate limiting for API routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // 200 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again later.',
+});
+app.use('/api/', apiLimiter);
 
 // Initialize in-memory SQLite database
 const db = new Database(':memory:');
